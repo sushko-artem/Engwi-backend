@@ -20,7 +20,11 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@common/": ["libs/common/src"],
+      "@common/*": ["libs/common/src/*"],
+      "@prisma/": ["src/prisma/"],
       "@prisma/*": ["src/prisma/*"],
+      "@user/": ["src/user/"],
       "@user/*": ["src/user/*"]
     }
   }

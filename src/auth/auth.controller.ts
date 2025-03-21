@@ -11,15 +11,11 @@ import {
 import { AuthService } from './auth.service';
 import { LoginUserDto, RegisterUserDto } from './DTO';
 import { Request, Response } from 'express';
-import { ConfigService } from '@nestjs/config';
 import { Token } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   async register(@Body() dto: RegisterUserDto) {
