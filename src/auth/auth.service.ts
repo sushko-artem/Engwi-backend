@@ -27,7 +27,7 @@ export class AuthService {
     });
   }
 
-  async login(dto: LoginUserDto, res: Response) {
+  async login(dto: LoginUserDto, response: Response, agent: string) {
     const user = await this.userService.findOne(dto.email).catch((err) => {
       this.logger.error(err);
       return null;
@@ -35,8 +35,8 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const accessToken = this.tokensService.generateAccessToken(dto, res);
-    const refreshToken = await this.tokensService.generateRefreshToken(user, res);
+    const accessToken = this.tokensService.generateAccessToken(dto, response);
+    const refreshToken = await this.tokensService.generateRefreshToken(user, response, agent);
     return { accessToken, refreshToken };
   }
 

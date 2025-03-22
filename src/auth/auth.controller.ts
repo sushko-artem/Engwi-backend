@@ -12,6 +12,7 @@ import { AuthService } from './auth.service';
 import { LoginUserDto, RegisterUserDto } from './DTO';
 import { Request, Response } from 'express';
 import { Token } from '@prisma/client';
+import { UserAgent } from '@common/decorators';
 
 @Controller('auth')
 export class AuthController {
@@ -26,12 +27,12 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() dto: LoginUserDto, @Res() res: Response) {
-    const tokens = await this.authService.login(dto, res);
+  async login(@Body() dto: LoginUserDto, @Res() response: Response, @UserAgent() agent: string) {
+    const tokens = await this.authService.login(dto, response, agent);
     if (!tokens) {
       throw new BadRequestException(`Can not enter with credentials ${JSON.stringify(dto)}`);
     }
-    return res.status(HttpStatus.OK).json({ message: 'Login successful' });
+    return response.status(HttpStatus.OK).json({ message: 'Login successful' });
   }
 
   @Post('refresh-tokens')

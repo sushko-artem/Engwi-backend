@@ -21,24 +21,31 @@ export class TokensService {
     return accessToken;
   }
 
-  async generateRefreshToken(dto: User, res: Response) {
+  async generateRefreshToken(dto: User, res: Response, agent: string) {
     const isExistRefreshToken = await this.prisma.token.findFirst({
       where: {
         userId: dto.id,
+        userAgent: agent,
       },
     });
-    if (isExistRefreshToken) {
+    if (isExistRefreshToken && new Date(isExistRefreshToken.exp) < new Date()) {
       await this.prisma.token.delete({
         where: {
           token: isExistRefreshToken.token,
         },
       });
     }
+    if (isExistRefreshToken && new Date(isExistRefreshToken.exp) > new Date()) {
+      const expire = isExistRefreshToken.exp.getTime() - new Date().getTime();
+      this.saveRefreshTokenToCookies(isExistRefreshToken.token, res, expire);
+      return isExistRefreshToken.token;
+    }
     const refreshToken = this.jwtService.sign(dto, {
       expiresIn: this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRES'),
       secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
     });
-    await this.saveRefreshToken(dto.id, refreshToken, res);
+    await this.saveRefreshToken(dto.id, refreshToken, agent);
+    this.saveRefreshTokenToCookies(refreshToken, res, null);
     return refreshToken;
   }
 
@@ -50,7 +57,7 @@ export class TokensService {
     });
   }
 
-  private async saveRefreshToken(userId: string, refreshToken: string, res: Response) {
+  private async saveRefreshToken(userId: string, refreshToken: string, agent: string) {
     const maxAge = ms(this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRES'));
     if (maxAge === undefined) {
       throw new Error('Invalid JWT_REFRESH_EXPIRES value');
@@ -61,12 +68,22 @@ export class TokensService {
         token: refreshToken,
         userId,
         exp: expiresAt,
+        userAgent: agent,
       },
     });
+  }
+
+  private saveRefreshTokenToCookies(refreshToken: string, res: Response, exp: number | null) {
+    let expTime: number;
+    if (exp) {
+      expTime = exp;
+    } else {
+      expTime = ms(this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRES')) as number;
+    }
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV', 'development') === 'production',
-      maxAge: ms(this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRES')),
+      maxAge: expTime,
     });
   }
 
