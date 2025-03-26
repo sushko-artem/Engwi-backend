@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { IjwtPayload } from './interfaces';
+import { IjwtPayload } from '../shared/interfaces/jwtPayloadInterface';
 import { Response } from 'express';
 import ms from 'ms';
 

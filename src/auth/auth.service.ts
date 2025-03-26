@@ -4,7 +4,7 @@ import { LoginUserDto, RegisterUserDto } from './DTO';
 import { TokensService } from 'src/tokens/tokens.service';
 import { Response } from 'express';
 import { compareSync } from 'bcrypt';
-import { IjwtPayload } from 'src/tokens/interfaces';
+import { IjwtPayload } from 'src/shared/interfaces/jwtPayloadInterface';
 
 @Injectable()
 export class AuthService {
