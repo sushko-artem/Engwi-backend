@@ -5,6 +5,6 @@ export class LoginUserDto {
   email: string;
 
   @IsString()
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  @MinLength(6, { message: 'Пароль должен содержать минимум 6 символов' })
   password: string;
 }

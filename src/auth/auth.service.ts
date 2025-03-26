@@ -3,7 +3,8 @@ import { UserService } from '@user/user.service';
 import { LoginUserDto, RegisterUserDto } from './DTO';
 import { TokensService } from 'src/tokens/tokens.service';
 import { Response } from 'express';
-import { Token } from '@prisma/client';
+import { compareSync } from 'bcrypt';
+import { IjwtPayload } from 'src/tokens/interfaces';
 
 @Injectable()
 export class AuthService {
@@ -19,28 +20,42 @@ export class AuthService {
       return null;
     });
     if (user) {
-      throw new ConflictException('User with that email is already exist');
+      throw new ConflictException('Пользователь с таким email уже существует');
     }
-    return this.userService.save(dto).catch((err) => {
+    return await this.userService.save(dto).catch((err) => {
       this.logger.error(err);
       return null;
     });
   }
 
-  async login(dto: LoginUserDto, response: Response, agent: string) {
+  async login(dto: LoginUserDto, response: Response, userAgent: string) {
     const user = await this.userService.findOne(dto.email).catch((err) => {
       this.logger.error(err);
       return null;
     });
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!user || !compareSync(dto.password, user.password)) {
+      throw new UnauthorizedException('Не верно указан email или пароль');
     }
-    const accessToken = this.tokensService.generateAccessToken(dto, response);
-    const refreshToken = await this.tokensService.generateRefreshToken(user, response, agent);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { name, password, createdAt, updatedAt, ...payload } = user;
+    const accessToken = await this.generateAccessToken(payload, response);
+    const refreshToken = await this.generateRefreshToken(payload, response, userAgent);
     return { accessToken, refreshToken };
   }
 
-  async verifyRefreshToken(refreshToken: Token) {
-    await this.tokensService.verifyRefreshToken(refreshToken.token);
+  async generateAccessToken(payload: IjwtPayload, response: Response) {
+    return this.tokensService.generateAccessToken(payload, response);
+  }
+
+  private async generateRefreshToken(payload: IjwtPayload, response: Response, userAgent: string) {
+    return this.tokensService.generateRefreshToken(payload, response, userAgent);
+  }
+
+  async verifyRefreshToken(refreshToken: string) {
+    return this.tokensService.verifyRefreshToken(refreshToken);
+  }
+
+  async validateRefreshToken(refreshToken: string, userId: string) {
+    return this.tokensService.validateRefreshToken(refreshToken, userId);
   }
 }

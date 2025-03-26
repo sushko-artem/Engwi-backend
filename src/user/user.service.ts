@@ -7,19 +7,19 @@ import { genSaltSync, hashSync } from 'bcrypt';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  save(user: Partial<User>) {
-    const hashedPassword = this.hashePassword(user.password!);
+  async save(user: Omit<User, 'id' | 'role' | 'createdAt' | 'updatedAt'>) {
+    const hashedPassword = this.hashePassword(user.password);
     return this.prisma.user.create({
       data: {
-        name: user.name!,
-        email: user.email!,
+        name: user.name,
+        email: user.email,
         password: hashedPassword,
         role: ['USER'],
       },
     });
   }
 
-  findOne(idOrEmail: string) {
+  async findOne(idOrEmail: string) {
     return this.prisma.user.findFirst({
       where: {
         OR: [{ id: idOrEmail }, { email: idOrEmail }],
@@ -27,7 +27,7 @@ export class UserService {
     });
   }
 
-  delete(id: string) {
+  async delete(id: string) {
     return this.prisma.user.delete({ where: { id } });
   }
 
